@@ -1,0 +1,29 @@
+doctype html
+html(ng-app='ubike-web', lang="zh-TW")
+  head
+    title VisualizationDemo
+    meta(charset="utf-8")
+    meta(name="viewport", content="width=device-width, initial-scale=1.0")
+    link(rel='stylesheet', href='lib/bootstrap/dist/css/bootstrap.css')
+    link(rel='stylesheet', href='app.css')
+  body
+    .container-fluid.main-content(ng-controller="UbikeCtrl")
+      .row-fluid
+        .span11.offset4
+          .title Visualization Demo
+      .row-fluid#figure
+        .span11.offset2
+          #d3box(style="height:4000px; width:1200px;")
+            #d3-canvas(style="height:4000px; width:1200px")
+      p.clear
+    .footer
+  script(src='lib/jquery/dist/jquery.js', type='text/javascript')
+  script(src='lib/bootstrap/dist/js/bootstrap.js', type='text/javascript')
+  script(src='lib/angular/angular.js', type='text/javascript')
+  script(src='lib/angular-resource/angular-resource.js', type='text/javascript')
+  script(src='lib/angular-route/angular-route.js', type='text/javascript')
+  script(src='lib/angular-animate/angular-animate.js', type='text/javascript')
+  script(src='lib/d3/d3.js', type='text/javascript')
+  script(src='app.js', type='text/javascript')
+ 
+ 
