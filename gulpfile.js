@@ -3,7 +3,7 @@
   var paths, gulp, gulpUtil, gulpConcat, gulpLivescript, gulpLivereload, streamqueue, path, gulpIf, gulpBower, gutil, livereloadServer, livereload, production, httpServer, gulpUglify, gulpFilter, gulpStylus, gulpCsso, nib, gulpJade;
   paths = {
     pub: '_public',
-    template: 'app/templates/index.jade',
+    template: 'app/templates/*.jade',
     assets: 'app/assets/**',
     lsApp: 'app/**/*.ls',
     stylus: 'app/styles/*.styl',
@@ -41,7 +41,7 @@
       return gutil.log("Running on " + gutil.colors.bold.inverse("http://localhost:" + port));
     });
   });
-  gulp.task('build', ['assets', 'js:app', 'css']);
+  gulp.task('build', ['assets', 'js:app', 'index', 'css']);
   gulp.task('dev', ['build', 'httpServer'], function(){
     gulp.watch(paths.template, ['index']);
     gulp.watch(paths.assets, ['assets']);
@@ -56,7 +56,7 @@
     }).on('error', gutil.log));
     return s = streamqueue({
       objectMode: true
-    }).done(app).pipe(gulpConcat('main.js')).pipe(gulpIf(production, gulpUglify())).pipe(gulp.dest(paths.pub + "/js"));
+    }).done(app).pipe(gulpConcat('app.js')).pipe(gulpIf(production, gulpUglify())).pipe(gulp.dest(paths.pub + "/js"));
   });
   gulpFilter = require('gulp-filter');
   gulpStylus = require('gulp-stylus');
@@ -86,7 +86,7 @@
     return gulp.src(paths.assets).pipe(gulp.dest(paths.pub));
   });
   gulp.task('bower', function(){
-    return gulpBower().pipe(gulp.dest('lib/'));
+    return gulpBower().pipe(gulp.dest(paths.pub + '/lib/'));
   });
   gulp.task('default', ['build']);
 }).call(this);

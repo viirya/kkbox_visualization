@@ -1,7 +1,7 @@
 
 paths =
   pub: '_public'
-  template: 'app/templates/index.jade'
+  template: 'app/templates/*.jade'
   assets: 'app/assets/**'
   ls-app: 'app/**/*.ls'
   stylus: 'app/styles/*.styl'
@@ -29,7 +29,7 @@ gulp.task \httpServer ->
   http-server.listen port, ->
     gutil.log "Running on " + gutil.colors.bold.inverse "http://localhost:#port"
 
-gulp.task 'build' <[assets js:app css]>
+gulp.task 'build' <[assets js:app index css]>
 gulp.task 'dev' <[build httpServer]> ->
   #port = 35729
   #livereload-server.listen port, -> gutil.log it if it
@@ -45,7 +45,7 @@ gulp.task 'js:app' ->
 
   s = streamqueue { +objectMode }
     .done app
-    .pipe gulp-concat 'main.js'
+    .pipe gulp-concat 'app.js'
     .pipe gulp-if production, gulp-uglify!
     .pipe gulp.dest "#{paths.pub}/js"
 
@@ -81,7 +81,7 @@ gulp.task 'assets' ->
 
 gulp.task 'bower' ->
   gulp-bower!
-    .pipe gulp.dest 'lib/'
+    .pipe gulp.dest paths.pub + '/lib/'
 
 gulp.task 'default' <[build]>
 
