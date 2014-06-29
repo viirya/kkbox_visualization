@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html ng-app="kkbox-vis" lang="zh-TW">
+  <head>
+    <title>VisualizationDemo</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="lib/bootstrap/dist/css/bootstrap.css">
+    <link rel="stylesheet" href="app.css">
+  </head>
+  <body>
+    <div ng-controller="KKBOXCtrl" class="container-fluid main-content">
+      <div class="row-fluid">
+        <div class="span11 offset4">
+          <div class="title">Visualization Demo</div>
+        </div>
+      </div>
+      <div id="figure" class="row-fluid">
+        <div class="span12">
+          <div id="d3box" style="height:4000px; width:2000px;">
+            <div id="d3-canvas" style="height:4000px; width:2000px"></div>
+          </div>
+        </div>
+      </div>
+      <p class="clear"></p>
+    </div>
+    <div class="footer"></div>
+  </body>
+  <script src="lib/jquery/dist/jquery.js" type="text/javascript"></script>
+  <script src="lib/bootstrap/dist/js/bootstrap.js" type="text/javascript"></script>
+  <script src="lib/angular/angular.js" type="text/javascript"></script>
+  <script src="lib/angular-resource/angular-resource.js" type="text/javascript"></script>
+  <script src="lib/angular-route/angular-route.js" type="text/javascript"></script>
+  <script src="lib/angular-animate/angular-animate.js" type="text/javascript"></script>
+  <script src="lib/d3/d3.js" type="text/javascript"></script>
+  <script src="js/app.js" type="text/javascript"></script>
+</html>
