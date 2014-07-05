@@ -1,6 +1,15 @@
 var app;
 app = angular.module('kkbox-vis', ['ngRoute', 'ngResource', 'ngAnimate']);
-app.controller('KKBOXCtrl', function($scope, $resource){});
+app.controller('KKBOXCtrl', function($scope, $resource){
+  return $scope.click_viewtype = function(view_type){
+    switch (view_type) {
+    case 'platform':
+      return console.log('platform');
+    case 'genre':
+      return console.log('genre');
+    }
+  };
+});
 $(document).ready(function(){
   var x, y, w, h, platforms, svg, color, line, area, axis, xAxis, lines;
   x = null;

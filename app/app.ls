@@ -4,6 +4,13 @@ app = angular.module \kkbox-vis, <[ngRoute ngResource ngAnimate]>
 do
     $scope, $resource <- app.controller \KKBOXCtrl, _
 
+    $scope.click_viewtype = (view_type) ->
+
+        switch view_type
+        case \platform then console.log \platform
+        case \genre then console.log \genre
+
+
 <- $ document .ready 
 
 x = null
@@ -57,7 +64,6 @@ do ->
         lines!
 
 lines = ->
-    console.log platforms
     x := d3.time.scale! .range [10, w - 60]
     y := d3.scale.linear! .range [h / 4 - 20, 0]
 

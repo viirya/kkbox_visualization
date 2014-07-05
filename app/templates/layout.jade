@@ -11,6 +11,13 @@ html(ng-app='kkbox-vis', lang="zh-TW")
       .row-fluid
         .span11.offset4
           .title Visualization Demo
+      .row-fluid
+        .span11.offset3
+          .viewtype
+            span.view_type 我要看
+            span.platform(ng-click="click_viewtype('platform')") 平台分析圖表
+            span.genre(ng-click="click_viewtype('genre')") 歌曲類型分析圖表
+
       .row-fluid#figure
         .span12
           #d3box(style="height:4000px; width:2000px;")

@@ -7953,6 +7953,22 @@ header span {
   margin-bottom: 50px;
   font-size: 40px;
 }
+.main-content span.view_type,
+.main-content span.platform,
+.main-content span.genre {
+  font-size: 28px;
+  margin-right: 10px;
+}
+.main-content span.platform:hover,
+.main-content span.genre:hover {
+  color: #f00;
+}
+.main-content span.view_type {
+  margin-left: 100px;
+}
+.main-content .viewtype {
+  margin-bottom: 20px;
+}
 .main-content p.clear {
   clear: both;
 }
