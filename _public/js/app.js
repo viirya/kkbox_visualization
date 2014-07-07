@@ -178,6 +178,9 @@ platform_analysis_lines = function(){
       return d.values[d.values.length - 1].date;
     })
   ]);
+  line.y(function(d){
+    return y(d[2]);
+  });
   xAxis = d3.svg.axis().scale(x).orient("bottom").ticks(30).tickSize(2000);
   g = svg.selectAll('.platform').attr('transform', function(d, i){
     return "translate(10, " + (i * h / 4 + 10) + ")";

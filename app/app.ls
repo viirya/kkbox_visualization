@@ -140,7 +140,7 @@ draw_platform_analysis = ->
         p.minCount = d3.min p.values, (d) -> d[2]
     
     platforms.sort (a, b) -> b.maxCount - a.maxCount
-    
+
     svg.selectAll \g .data platforms .enter! .append \g .attr \class, \platform
     platform_analysis_lines!
 
@@ -153,6 +153,7 @@ platform_analysis_lines = ->
         d3.max platforms, (d) -> d.values[d.values.length - 1].date
     ]
 
+    line .y (d) -> y d[2]
     xAxis := d3.svg.axis! .scale x .orient("bottom") .ticks(30) .tickSize(2000)
 
     g = svg.selectAll \.platform .attr \transform, (d, i) -> "translate(10, #{i * h / 4 + 10})"  
