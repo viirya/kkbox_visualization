@@ -1,11 +1,12 @@
-var x, y, w, h, duration, platforms, genres, svg, color, line, area, axis, xAxis, draw_genre_analysis, genre_analysis_stakced_areas, draw_platform_analysis, platform_analysis_lines, app;
+var x, y, w, h, duration, platforms, genres, ages, svg, color, line, area, axis, xAxis, fill_missing_playing_time, draw_age_analysis, age_analysis_stakced_areas, draw_genre_analysis, genre_analysis_stakced_areas, draw_platform_analysis, platform_analysis_lines, app;
 x = null;
 y = null;
-w = 2000;
+w = 1600;
 h = 1600;
 duration = 1500;
 platforms = null;
 genres = null;
+ages = null;
 svg = null;
 color = d3.scale.category10();
 line = d3.svg.line().interpolate('basis').x(function(d){
@@ -22,6 +23,128 @@ axis = d3.svg.line().interpolate('basis').x(function(d){
   return d.date;
 }).y(h);
 xAxis = null;
+fill_missing_playing_time = function(data, all_play_time, key_parser){
+  return data.forEach(function(p){
+    var newvalue, all_play_time_base;
+    newvalue = [];
+    all_play_time_base = 0;
+    p.values.forEach(function(d, i){
+      while (all_play_time_base < all_play_time.Data.length && d[0] !== all_play_time.Data[all_play_time_base][0] + '.000') {
+        newvalue.push([all_play_time.Data[all_play_time_base][0], key_parser(p.key), 0]);
+        all_play_time_base++;
+      }
+      all_play_time_base++;
+      return newvalue.push(d);
+    });
+    if (newvalue.length !== 720) {
+      while (all_play_time_base < all_play_time.Data.length) {
+        newvalue.push([all_play_time.Data[all_play_time_base][0], key_parser(p.key), 0]);
+        all_play_time_base++;
+      }
+    }
+    return p.values = newvalue;
+  });
+};
+draw_age_analysis = function(){
+  return d3.json('log_group_by_hour_age.json', function(error, json){
+    if (error) {
+      return console.warn(error);
+    }
+    return d3.json('distinct_play_time.json', function(error, all_play_time){
+      var time_parser;
+      time_parser = d3.time.format('%Y-%m-%d %X.000').parse;
+      ages = d3.nest().key(function(d){
+        return d[1];
+      }).entries(json.Data);
+      fill_missing_playing_time(ages, all_play_time, function(key){
+        return key;
+      });
+      ages.forEach(function(p){
+        p.values.forEach(function(d){
+          return d.date = time_parser(d[0]);
+        });
+        p.maxCount = d3.max(p.values, function(d){
+          return d[2];
+        });
+        return p.minCount = d3.min(p.values, function(d){
+          return d[2];
+        });
+      });
+      ages.sort(function(a, b){
+        return b.maxCount - a.maxCount;
+      });
+      svg.selectAll('g').data(ages).enter().append('g').attr('class', 'age');
+      return age_analysis_stakced_areas();
+    });
+  });
+};
+age_analysis_stakced_areas = function(){
+  var stack, t;
+  stack = d3.layout.stack().values(function(d){
+    return d.values;
+  }).x(function(d){
+    return d.date;
+  }).y(function(d){
+    return d[2];
+  }).out(function(d, y0, y){
+    return d.count0 = y0;
+  }).order('reverse');
+  stack(ages);
+  x = d3.time.scale().range([10, w - 60]);
+  x.domain([
+    d3.min(ages, function(d){
+      return d.values[0].date;
+    }), d3.max(ages, function(d){
+      return d.values[d.values.length - 1].date;
+    })
+  ]);
+  xAxis = d3.svg.axis().scale(x).orient("bottom").ticks(30).tickSize(2000);
+  y.domain([
+    0, d3.max(ages[0].values.map(function(d){
+      return d[2] + d.count0;
+    }))
+  ]).range([h + 380, 0]);
+  line.y(function(d){
+    return y(d.count0);
+  });
+  area.y0(function(d){
+    return y(d.count0);
+  }).y1(function(d){
+    return y(d.count0 + d[2]);
+  });
+  t = svg.selectAll('.age').transition().duration(duration).attr('transform', "translate(0,0)").each('end', function(){
+    return d3.select(this).attr("transform", null);
+  });
+  t.each(function(d){
+    var e;
+    e = d3.select(this);
+    e.append('path').attr('class', 'line');
+    e.append('text').attr('x', 12).attr('dy', '.31em').text(function(d){
+      return d.key;
+    });
+    return e.insert('path', '.line').attr('class', 'area').style('fill', color(d.key)).attr('d', function(d){
+      return area(d.values);
+    });
+  });
+  t.select('path.area').attr('d', function(d){
+    return area(d.values);
+  });
+  t.select('path.line').style('stroke-opacity', function(d, i){
+    var ref$;
+    return (ref$ = i < 3) != null
+      ? ref$
+      : {
+        1e-6: 1
+      };
+  }).attr('d', function(d){
+    return line(d.values);
+  });
+  t.select('text').attr('transform', function(d){
+    d = d.values[d.values.length - 1];
+    return "translate(" + (w - 60) + ", " + y(d[2] / 2 + d.count0) + ")";
+  });
+  return svg.append('g').attr('class', "x axis").attr('transform', "translate(10, 0)").call(xAxis);
+};
 draw_genre_analysis = function(){
   return d3.json('log_group_by_hour_genre.json', function(error, json){
     if (error) {
@@ -33,25 +156,8 @@ draw_genre_analysis = function(){
       genres = d3.nest().key(function(d){
         return d[1];
       }).entries(json.Data);
-      genres.forEach(function(p){
-        var newvalue, all_play_time_base;
-        newvalue = [];
-        all_play_time_base = 0;
-        p.values.forEach(function(d, i){
-          while (all_play_time_base < all_play_time.Data.length && d[0] !== all_play_time.Data[all_play_time_base][0] + '.000') {
-            newvalue.push([all_play_time.Data[all_play_time_base][0], parseInt(p.key), 0]);
-            all_play_time_base++;
-          }
-          all_play_time_base++;
-          return newvalue.push(d);
-        });
-        if (newvalue.length !== 720) {
-          while (all_play_time_base < all_play_time.Data.length) {
-            newvalue.push([all_play_time.Data[all_play_time_base][0], parseInt(p.key), 0]);
-            all_play_time_base++;
-          }
-        }
-        return p.values = newvalue;
+      fill_missing_playing_time(genres, all_play_time, function(key){
+        return parseInt(key);
       });
       genres.forEach(function(p){
         p.values.forEach(function(d){
@@ -233,6 +339,8 @@ app.controller('KKBOXCtrl', function($scope, $resource){
       return draw_platform_analysis();
     case 'genre':
       return draw_genre_analysis();
+    case 'age':
+      return draw_age_analysis();
     }
   };
 });

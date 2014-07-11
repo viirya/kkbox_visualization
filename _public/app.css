@@ -7955,7 +7955,8 @@ header span {
 }
 .main-content span.view_type,
 .main-content span.platform,
-.main-content span.genre {
+.main-content span.genre,
+.main-content span.age {
   font-size: 28px;
   margin-right: 10px;
 }
