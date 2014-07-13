@@ -50,6 +50,14 @@ fill_missing_playing_time = (data, all_play_time, key_parser) ->
 
         p.values = newvalue
 
+getancestors = (node) ->
+    path = []
+    current = node
+
+    while current.parent
+        path.unshift current
+        current = current.parent
+    path
 
 buildhierarchy = (json) ->
 
@@ -117,14 +125,51 @@ platform_genre_analysis_arcs = ->
 
     total_size = null
 
+    inspector = d3.select \body .append \div .attr \class, \inspector .style \opacity, 0
+        .style \width, \400px
+        .style \height, \200px
+        .style \color, \#666
+        .style \position, \absolute
+        .style \left, "#{w / 2 + 120}px"
+        .style \top, "#{h / 2 + 100}px"
+        .style \text-align, \center
+        .style \background, \#FAF9F0
+
+    inspector.append \span .attr \id, \percentage .style \color, \#666
+        .style \font-size, \1.5em
+
     mouseover = (d) ->
+
+        sequence_array = getancestors d
+
         percentage = (100 * d.value / total_size) .toPrecision 3
         percentageString = percentage + "%"
 
         if percentage < 0.1
             percentageString = "< 0.1%"
 
-        console.log percentageString
+        path_string = ''
+        if sequence_array.length > 0
+            path_string += sequence_array[0].name 
+
+            if sequence_array.length > 1
+                path_string += ' && song type ' + sequence_array[1].name
+        /* 
+        for i from 0 to sequence_array.length - 1 by 1
+            path_string += sequence_array[i].name 
+            if i < sequence_array.length - 1
+                path_string += \>>
+        */
+
+        d3.select \#percentage .text path_string + ": " + percentageString
+
+        inspector.transition! .duration 200 .style \opacity, 0.9
+
+        d3.selectAll \path .style \opacity, 0.3
+        vis.selectAll \path
+            .filter (node) ->
+                sequence_array.indexOf(node) >= 0
+            .style \opacity, 1
 
     colors = d3.scale .ordinal! .domain (<[Mac Windows Android iPhone Unknown]> .concat [1 to 50])
         .range (colorbrewer.RdBu[9] .concat colorbrewer.YlGn[9] .concat colorbrewer.YlOrRd[9] .concat colorbrewer.Greens[9])

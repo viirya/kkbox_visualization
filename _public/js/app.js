@@ -1,4 +1,4 @@
-var x, y, w, h, duration, platforms, genres, ages, platform_genre_nodes, svg, color, line, area, axis, xAxis, fill_missing_playing_time, buildhierarchy, draw_platform_genre_analysis, platform_genre_analysis_arcs, draw_age_analysis, age_analysis_stakced_areas, draw_genre_analysis, genre_analysis_stakced_areas, draw_platform_analysis, platform_analysis_lines, app;
+var x, y, w, h, duration, platforms, genres, ages, platform_genre_nodes, svg, color, line, area, axis, xAxis, fill_missing_playing_time, getancestors, buildhierarchy, draw_platform_genre_analysis, platform_genre_analysis_arcs, draw_age_analysis, age_analysis_stakced_areas, draw_genre_analysis, genre_analysis_stakced_areas, draw_platform_analysis, platform_analysis_lines, app;
 x = null;
 y = null;
 w = 1600;
@@ -45,6 +45,16 @@ fill_missing_playing_time = function(data, all_play_time, key_parser){
     }
     return p.values = newvalue;
   });
+};
+getancestors = function(node){
+  var path, current;
+  path = [];
+  current = node;
+  while (current.parent) {
+    path.unshift(current);
+    current = current.parent;
+  }
+  return path;
 };
 buildhierarchy = function(json){
   var root, i$, to$, i, size, currentNode, j$, j, children, nodeName, childNode, foundChild, k$, to1$, k;
@@ -103,7 +113,7 @@ draw_platform_genre_analysis = function(){
   });
 };
 platform_genre_analysis_arcs = function(){
-  var w, h, radius, partition, arc, nodes, vis, total_size, mouseover, colors, path;
+  var w, h, radius, partition, arc, nodes, vis, total_size, inspector, mouseover, colors, path;
   w = 1000;
   h = 1000;
   radius = Math.min(w, h) / 2;
@@ -124,14 +134,35 @@ platform_genre_analysis_arcs = function(){
   });
   vis = svg.append('g').attr('id', 'container').attr('transform', "translate(" + (w / 2 + 300) + ", " + h / 2 + ")");
   total_size = null;
+  inspector = d3.select('body').append('div').attr('class', 'inspector').style('opacity', 0).style('width', '400px').style('height', '200px').style('color', '#666').style('position', 'absolute').style('left', (w / 2 + 120) + "px").style('top', (h / 2 + 100) + "px").style('text-align', 'center').style('background', '#FAF9F0');
+  inspector.append('span').attr('id', 'percentage').style('color', '#666').style('font-size', '1.5em');
   mouseover = function(d){
-    var percentage, percentageString;
+    var sequence_array, percentage, percentageString, path_string;
+    sequence_array = getancestors(d);
     percentage = (100 * d.value / total_size).toPrecision(3);
     percentageString = percentage + "%";
     if (percentage < 0.1) {
       percentageString = "< 0.1%";
     }
-    return console.log(percentageString);
+    path_string = '';
+    if (sequence_array.length > 0) {
+      path_string += sequence_array[0].name;
+      if (sequence_array.length > 1) {
+        path_string += ' && song type ' + sequence_array[1].name;
+      }
+    }
+    /* 
+    for i from 0 to sequence_array.length - 1 by 1
+        path_string += sequence_array[i].name 
+        if i < sequence_array.length - 1
+            path_string += \>>
+    */
+    d3.select('#percentage').text(path_string + ": " + percentageString);
+    inspector.transition().duration(200).style('opacity', 0.9);
+    d3.selectAll('path').style('opacity', 0.3);
+    return vis.selectAll('path').filter(function(node){
+      return sequence_array.indexOf(node) >= 0;
+    }).style('opacity', 1);
   };
   colors = d3.scale.ordinal().domain(['Mac', 'Windows', 'Android', 'iPhone', 'Unknown'].concat([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50])).range(colorbrewer.RdBu[9].concat(colorbrewer.YlGn[9]).concat(colorbrewer.YlOrRd[9]).concat(colorbrewer.Greens[9]));
   path = vis.data([platform_genre_nodes]).selectAll('path').data(nodes).enter().append('svg:path').attr('display', function(d){
