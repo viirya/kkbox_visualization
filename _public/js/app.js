@@ -1,4 +1,4 @@
-var x, y, w, h, duration, platforms, genres, ages, svg, color, line, area, axis, xAxis, fill_missing_playing_time, draw_age_analysis, age_analysis_stakced_areas, draw_genre_analysis, genre_analysis_stakced_areas, draw_platform_analysis, platform_analysis_lines, app;
+var x, y, w, h, duration, platforms, genres, ages, platform_genre_nodes, svg, color, line, area, axis, xAxis, fill_missing_playing_time, buildhierarchy, draw_platform_genre_analysis, platform_genre_analysis_arcs, draw_age_analysis, age_analysis_stakced_areas, draw_genre_analysis, genre_analysis_stakced_areas, draw_platform_analysis, platform_analysis_lines, app;
 x = null;
 y = null;
 w = 1600;
@@ -7,6 +7,7 @@ duration = 1500;
 platforms = null;
 genres = null;
 ages = null;
+platform_genre_nodes = null;
 svg = null;
 color = d3.scale.category10();
 line = d3.svg.line().interpolate('basis').x(function(d){
@@ -44,6 +45,105 @@ fill_missing_playing_time = function(data, all_play_time, key_parser){
     }
     return p.values = newvalue;
   });
+};
+buildhierarchy = function(json){
+  var root, i$, to$, i, size, currentNode, j$, j, children, nodeName, childNode, foundChild, k$, to1$, k;
+  root = {
+    "name": "root",
+    "children": []
+  };
+  for (i$ = 0, to$ = json.Data.length; i$ <= to$; ++i$) {
+    i = i$;
+    if (json.Data[i] === void 8) {
+      break;
+    }
+    size = json.Data[i][2];
+    currentNode = root;
+    for (j$ = 0; j$ <= 1; ++j$) {
+      j = j$;
+      children = currentNode["children"];
+      nodeName = json.Data[i][j];
+      childNode = null;
+      if (j === 0) {
+        foundChild = false;
+        for (k$ = 0, to1$ = children.length - 1; k$ <= to1$; ++k$) {
+          k = k$;
+          if (children[k]["name"] === nodeName) {
+            childNode = children[k];
+            foundChild = true;
+            break;
+          }
+        }
+        if (!foundChild) {
+          childNode = {
+            "name": nodeName,
+            "children": []
+          };
+          children.push(childNode);
+        }
+        currentNode = childNode;
+      } else {
+        childNode = {
+          "name": nodeName,
+          "size": size
+        };
+        children.push(childNode);
+      }
+    }
+  }
+  return root;
+};
+draw_platform_genre_analysis = function(){
+  return d3.json('log_group_by_platform_genre.json', function(error, json){
+    if (error) {
+      return console.warn(error);
+    }
+    platform_genre_nodes = buildhierarchy(json);
+    return platform_genre_analysis_arcs();
+  });
+};
+platform_genre_analysis_arcs = function(){
+  var w, h, radius, partition, arc, nodes, vis, total_size, mouseover, colors, path;
+  w = 1000;
+  h = 1000;
+  radius = Math.min(w, h) / 2;
+  partition = d3.layout.partition().size([2 * Math.PI, radius * radius]).value(function(d){
+    return d.size;
+  });
+  arc = d3.svg.arc().startAngle(function(d){
+    return d.x;
+  }).endAngle(function(d){
+    return d.x + d.dx;
+  }).innerRadius(function(d){
+    return Math.sqrt(d.y);
+  }).outerRadius(function(d){
+    return Math.sqrt(d.y + d.dy);
+  });
+  nodes = partition.nodes(platform_genre_nodes).filter(function(d){
+    return d.dx > 0.005;
+  });
+  vis = svg.append('g').attr('id', 'container').attr('transform', "translate(" + (w / 2 + 300) + ", " + h / 2 + ")");
+  total_size = null;
+  mouseover = function(d){
+    var percentage, percentageString;
+    percentage = (100 * d.value / total_size).toPrecision(3);
+    percentageString = percentage + "%";
+    if (percentage < 0.1) {
+      percentageString = "< 0.1%";
+    }
+    return console.log(percentageString);
+  };
+  colors = d3.scale.ordinal().domain(['Mac', 'Windows', 'Android', 'iPhone', 'Unknown'].concat([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50])).range(colorbrewer.RdBu[9].concat(colorbrewer.YlGn[9]).concat(colorbrewer.YlOrRd[9]).concat(colorbrewer.Greens[9]));
+  path = vis.data([platform_genre_nodes]).selectAll('path').data(nodes).enter().append('svg:path').attr('display', function(d){
+    if (d.depth > 0) {
+      return null;
+    } else {
+      return 'none';
+    }
+  }).attr('d', arc).attr('fill-rule', 'evenodd').style('fill', function(d){
+    return colors(d.name);
+  }).style('opacity', 1).on('mouseover', mouseover);
+  return total_size = path.node().__data__.value;
 };
 draw_age_analysis = function(){
   return d3.json('log_group_by_hour_age.json', function(error, json){
@@ -341,6 +441,8 @@ app.controller('KKBOXCtrl', function($scope, $resource){
       return draw_genre_analysis();
     case 'age':
       return draw_age_analysis();
+    case 'platform_genre':
+      return draw_platform_genre_analysis();
     }
   };
 });

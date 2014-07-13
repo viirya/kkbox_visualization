@@ -12,6 +12,8 @@ duration = 1500
 platforms = null
 genres = null
 ages = null
+platform_genre_nodes = null
+
 svg = null
  
 color = d3.scale.category10!
@@ -47,6 +49,100 @@ fill_missing_playing_time = (data, all_play_time, key_parser) ->
                 all_play_time_base++
 
         p.values = newvalue
+
+
+buildhierarchy = (json) ->
+
+    root = {"name": "root", "children": []}
+
+    for i from 0 to json.Data.length by 1
+        if json.Data[i] is void
+            break
+        size = json.Data[i][2]
+
+        currentNode = root
+        for j from 0 to 1 by 1
+            children = currentNode["children"]
+            nodeName = json.Data[i][j]
+            childNode = null
+
+            if j == 0
+                foundChild = false            
+                for k from 0 to children.length - 1 by 1
+                    if children[k]["name"] is nodeName
+                        childNode = children[k]
+                        foundChild = true
+                        break
+                if not foundChild
+                    childNode = {"name": nodeName, "children": []}
+                    children.push(childNode)
+                
+                currentNode = childNode 
+            else
+                childNode = {"name": nodeName, "size": size}
+                children.push(childNode)
+
+    root
+
+draw_platform_genre_analysis = ->
+
+    error, json <- d3.json \log_group_by_platform_genre.json
+    if error
+        return console.warn error
+
+    platform_genre_nodes := buildhierarchy json
+    platform_genre_analysis_arcs!
+
+platform_genre_analysis_arcs = ->
+
+    w = 1000
+    h = 1000
+
+    radius = Math.min(w, h) / 2
+
+    partition = d3.layout.partition!
+        .size [2 * Math.PI, radius * radius]
+        .value (d) -> d.size
+
+    arc = d3.svg.arc!
+        .startAngle (d) -> d.x
+        .endAngle (d) -> d.x + d.dx
+        .innerRadius (d) -> Math.sqrt d.y
+        .outerRadius (d) -> Math.sqrt(d.y + d.dy)
+
+    nodes = partition.nodes platform_genre_nodes
+        .filter (d) -> d.dx > 0.005
+
+    vis = svg.append \g .attr \id, \container .attr \transform, "translate(#{w / 2 + 300}, #{h / 2})"
+
+    total_size = null
+
+    mouseover = (d) ->
+        percentage = (100 * d.value / total_size) .toPrecision 3
+        percentageString = percentage + "%"
+
+        if percentage < 0.1
+            percentageString = "< 0.1%"
+
+        console.log percentageString
+
+    colors = d3.scale .ordinal! .domain (<[Mac Windows Android iPhone Unknown]> .concat [1 to 50])
+        .range (colorbrewer.RdBu[9] .concat colorbrewer.YlGn[9] .concat colorbrewer.YlOrRd[9] .concat colorbrewer.Greens[9])
+
+
+    path = vis.data [platform_genre_nodes] .selectAll \path
+        .data nodes
+        .enter! .append \svg:path
+        .attr \display, (d) ->
+            if d.depth > 0 then null else \none
+        .attr \d, arc
+        .attr \fill-rule, \evenodd
+        .style \fill, (d) -> colors(d.name)
+        .style \opacity, 1
+        .on \mouseover, mouseover
+
+    total_size = path.node! .__data__.value
+
 
 draw_age_analysis = ->
 
@@ -282,6 +378,7 @@ do
         case \platform then draw_platform_analysis!
         case \genre then draw_genre_analysis!
         case \age then draw_age_analysis!
+        case \platform_genre then draw_platform_genre_analysis!
 
 
 <- $ document .ready 
